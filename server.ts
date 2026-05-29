@@ -13,6 +13,82 @@ app.use(express.json());
 let aiInstance: GoogleGenAI | null = null;
 let lastInitializedKey: string | undefined = undefined;
 let isApiKeyInvalid = false;
+let isQuotaExceeded = false;
+let quotaExceededResetTime = 0;
+
+function checkQuotaStatus(): boolean {
+  if (isQuotaExceeded) {
+    if (Date.now() > quotaExceededResetTime) {
+      isQuotaExceeded = false;
+      console.log("[Gemini API] Quota lock window elapsed, resetting verification state.");
+      return true;
+    }
+    return false;
+  }
+  return true;
+}
+
+function getDetailedSimulatedCropAdvice(sensorData: any): string {
+  const moisture = sensorData?.moisture ?? 42;
+  const ph = sensorData?.ph ?? 6.5;
+  const temperature = sensorData?.temperature ?? 26;
+  const n = sensorData?.n ?? 60;
+  const p = sensorData?.p ?? 45;
+  const k = sensorData?.k ?? 55;
+
+  if (moisture > 80) { // Node C (Zone 3) / Flooded Saturated
+    return `### 1. Soil Health Assessment
+- **Status (Zone 3 - Flood Alert)**: Waterlogged land (${moisture}% water content) with cool soil temperatures (${temperature}°C) and standard acidic pH levels (${ph}). Root zone is fully submerged.
+
+### 2. Suitable Crops
+1. **Rice (Paddy)**: Highly adaptive semi-aquatic plant species optimized for standing waterfields and anaerobic soil profiles.
+2. **Sugarcane (Heavy Intake)**: Possesses an exceptionally high water requirement, allowing it to grow steadily under rich saturated clay or waterlogged silt blocks.
+3. **Water Spinach (Kalmi)**: Resilient green crop that prefers muddy, high-moisture swamp surfaces.
+
+### 3. Current Crop Advice (Rice / Sugarcane)
+- **Warning**: Standing water depth must be structured carefully. Saturated soils prevent oxygen diffusion to root bases, causing active root rot in non-aquatic crops.
+- Dig sub-surface perimeter trenches or drainage canals if trying to cultivate anything other than rice or sugarcane to drain water quickly.
+
+### 4. Fertilizer & Irrigation
+- **Irrigation Action**: Deactive all electric well pumps and automated irrigation valves immediately.
+- **Fertilizer Guidance**: Nutrients (N=${n}, P=${p}, K=${k} ppm) are prone to leaking out in runoffs under flooded states. Avoid solid granular nitrogen application until fields stabilize, avoiding downstream chemical waste. Use organic slow-release mulch during drainage phases.`;
+  }
+
+  if (moisture < 20) { // Node B (Zone 2) / Dry
+    return `### 1. Soil Health Assessment
+- **Status (Zone 2 - Drought Alert)**: Dehydrated crop land with critically low moisture levels (${moisture}%), elevated soil surface temperature (${temperature}°C), and slightly alkaline pH levels (${ph}).
+
+### 2. Suitable Crops
+1. **Groundnut (Peanuts)**: Resilient legume capable of high nitrogen fixation that tolerates dry soil during primary vegetative states.
+2. **Dryland Pulses**: Legume strains that conserve water well and establish key nutrient bonds under minimal moisture.
+3. **Resilient Sorghum (Jowar)**: Broad-rooted millet species that thrives deep within low precipitation areas.
+
+### 3. Current Crop Advice (Groundnuts & Pulses)
+- **Warning**: Severe water stress is restricting standard cellular growth. Crops can face permanent seedling wilting if moisture remains below 15% for more than 48 hours.
+- Implement organic dry-straw mulch or sugarcane bagging around crop crowns to preserve residual subsoil water from sun-baked evaporation.
+
+### 4. Fertilizer & Irrigation
+- **Irrigation Action**: Immediate deep localized drip irrigation or micro-sprinkler runs are highly required.
+- **Fertilizer Guidance**: Dry soil cannot transfer nutrients (N=${n}, P=${p}, K=${k} ppm) effectively into root capillaries, potentially causing chemical dehydration of root structures. Refrain from applying chemical fertilizers until a regular irrigation schedule is restored.`;
+  }
+
+  // Node A (Zone 1) / Normal Soil
+  return `### 1. Soil Health Assessment
+- **Status (Zone 1 - Optimal Condition)**: Extremely healthy soil parameters displaying stable nominal moisture levels (${moisture}%), warm balanced temperatures (${temperature}°C), and neutral pH balance (${ph}).
+
+### 2. Suitable Crops
+1. **Vegetables / Premium Tomatoes**: Highly suited to well-drained loams where controlled watering produces juicy crops and thick branch layouts.
+2. **French Beans**: Moderate water affinity plant that utilizes steady potash ratios beautifully.
+3. **Okra (Bhindi)**: Highly productive warm-season pod vegetable optimized for these temperate ground parameters.
+
+### 3. Current Crop Advice (Vegetables / Tomatoes)
+- Soil moisture levels are within perfect physiological zones. Maintain current standard watering schedules (morning or evening window offsets).
+- Nutrient levels are highly active and support smooth micro-bacterial health.
+
+### 4. Fertilizer & Irrigation
+- **Irrigation Action**: Run scheduled high-efficiency drip loops for 15-20 minutes daily.
+- **Fertilizer Guidance**: Excellent default readings (N=${n}, P=${p}, K=${k} ppm). A light side-dress of organic compost or soluble nitrogen during peak vegetative and flowering stages will help maximize crop yields.`;
+}
 
 function getGeminiClient(): GoogleGenAI | null {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -56,6 +132,81 @@ function handleGeminiError(error: any, endpointName: string): void {
     isApiKeyInvalid = true;
     console.warn(`[getGeminiClient] Detected invalid GEMINI_API_KEY during ${endpointName} request. Falling back to simulated mode dynamically.`);
   }
+}
+
+async function generateGeminiContentWithRetry(
+  prompt: string,
+  config?: any
+): Promise<string> {
+  if (!checkQuotaStatus()) {
+    throw new Error("Gemini quota is temporarily blocked due to rate limits.");
+  }
+
+  const ai = getGeminiClient();
+  if (!ai) {
+    throw new Error("No Gemini client initialized");
+  }
+
+  const modelsToTry = ["gemini-3.5-flash", "gemini-3.1-flash-lite"];
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    let attempts = 0;
+    const maxAttempts = 2;
+    while (attempts < maxAttempts) {
+      try {
+        attempts++;
+        console.log(`[Gemini API] Attempting generation with model: ${model}, attempt: ${attempts}`);
+        const response = await ai.models.generateContent({
+          model: model,
+          contents: prompt,
+          ...config
+        });
+        
+        if (response.text) {
+          return response.text;
+        }
+      } catch (err: any) {
+        lastError = err;
+        const errStr = err?.message || (typeof err === 'object' ? JSON.stringify(err) : String(err));
+        console.warn(`[Gemini API] Error using model ${model} (attempt ${attempts}):`, errStr);
+        
+        const isQuotaError = errStr.includes("429") || 
+                             errStr.includes("RESOURCE_EXHAUSTED") ||
+                             errStr.includes("Quota exceeded") ||
+                             errStr.includes("quota");
+
+        if (isQuotaError) {
+          isQuotaExceeded = true;
+          // Block Gemini calls for 5 minutes to keep the app immediately responsive
+          quotaExceededResetTime = Date.now() + 300000;
+          console.warn("[Gemini API] Quota limit exceeded. Engaging automatic 5-minute fallback cache to prevent unresponsive timeouts.");
+          break; // Break the attempt loop
+        }
+
+        const isTransient = errStr.includes("503") || 
+                            errStr.includes("UNAVAILABLE") || 
+                            errStr.includes("high demand") || 
+                            errStr.includes("timeout") ||
+                            errStr.includes("Spikes in demand") ||
+                            errStr.includes("temporary");
+                            
+        if (!isTransient) {
+          break; // fatal or non-retriable error
+        }
+        
+        if (attempts < maxAttempts) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempts));
+        }
+      }
+    }
+    // If quota was hit during attempts on the current model, do not try other models
+    if (isQuotaExceeded) {
+      break;
+    }
+  }
+  
+  throw lastError || new Error("Failed to generate content with all models");
 }
 
 // Simulated Fallbacks for offline / missing key situations
@@ -108,14 +259,12 @@ app.post("/api/crop-advice", async (req, res) => {
   const { sensorData, currentCrop } = req.body;
   const ai = getGeminiClient();
 
-  if (!ai) {
-    return res.json({ advice: simulatedCropAdvice });
+  if (!ai || !checkQuotaStatus()) {
+    return res.json({ advice: getDetailedSimulatedCropAdvice(sensorData) });
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: `
+    const text = await generateGeminiContentWithRetry(`
         You are an expert Indian agricultural advisor. 
         Analyze the following soil sensor data:
         - Moisture: ${sensorData?.moisture ?? 45}%
@@ -140,13 +289,12 @@ app.post("/api/crop-advice", async (req, res) => {
         Precise advice on what to add and how much to water.
         
         Keep the response professional, actionable, and empathetic. Do not use complex jargon.
-      `,
-    });
+      `);
 
-    res.json({ advice: response.text || simulatedCropAdvice });
+    res.json({ advice: text || getDetailedSimulatedCropAdvice(sensorData) });
   } catch (error) {
     handleGeminiError(error, "Crop Advice");
-    res.json({ advice: simulatedCropAdvice });
+    res.json({ advice: getDetailedSimulatedCropAdvice(sensorData) });
   }
 });
 
@@ -154,14 +302,12 @@ app.post("/api/crop-advice", async (req, res) => {
 app.get("/api/market-forecast", async (req, res) => {
   const ai = getGeminiClient();
 
-  if (!ai) {
+  if (!ai || !checkQuotaStatus()) {
     return res.json({ forecast: simulatedMarketForecast });
   }
 
   try {
-    const response = await ai.models.generateContent({
-      model: "gemini-3.5-flash",
-      contents: `
+    const text = await generateGeminiContentWithRetry(`
         You are a commodity market analyst specializing in Indian Agriculture.
         Based on seasonal trends, current monsoon reports (hypothetical for May 2026), and common market dynamics in India:
         
@@ -175,10 +321,9 @@ app.get("/api/market-forecast", async (req, res) => {
         
         Keep the response concise and formatted as a clean markdown list.
         Include a disclaimer that these are predictions based on AI analysis.
-      `,
-    });
+      `);
 
-    res.json({ forecast: response.text || simulatedMarketForecast });
+    res.json({ forecast: text || simulatedMarketForecast });
   } catch (error) {
     handleGeminiError(error, "Market Forecast");
     res.json({ forecast: simulatedMarketForecast });

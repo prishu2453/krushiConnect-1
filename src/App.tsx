@@ -206,34 +206,33 @@ export default function App() {
   const [isConnected, setIsConnected] = useState(false);
 
   const getSoilDetails = (id: 'A' | 'B' | 'C') => {
-    switch (id) {
-      case 'A':
-        return {
-          emoji: '🌿',
-          name: language === 'hi' ? 'गीली मिट्टी (कम गीली)' : language === 'mr' ? 'कमी ओली माती' : language === 'te' ? 'కొద్దిగా తడి నేల' : language === 'gu' ? 'ઓછી લીલી માટી' : 'Little Wet Soil',
-          desc: language === 'hi' ? 'अनुकूल आर्द्र परिवेश (38%)' : language === 'mr' ? 'चांगले तापमान व ओलावा' : language === 'te' ? 'సరైన తేమ' : 'Moist & aerated (38%)',
-          color: 'text-emerald-700 bg-emerald-50/50 border-emerald-100',
-          indicator: 'bg-emerald-500'
-        };
-      case 'B':
-        return {
-          emoji: '🏜️',
-          name: language === 'hi' ? 'सूखी मिट्टी' : language === 'mr' ? 'सुकी माती' : language === 'te' ? 'పొడి నేల' : language === 'gu' ? 'સૂકી માટી' : 'Dry Soil',
-          desc: language === 'hi' ? 'निर्जलित शुष्क अवस्था (12%)' : language === 'mr' ? 'कमी ओलावा' : language === 'te' ? 'ఎండిపోయిన నేల' : 'Dry, needs water (12%)',
-          color: 'text-amber-700 bg-amber-50/50 border-amber-100',
-          indicator: 'bg-amber-500 animate-pulse'
-        };
-      case 'C':
-        return {
-          emoji: '🌊',
-          name: language === 'hi' ? 'जलमग्न / बाढ़ मिट्टी' : language === 'mr' ? 'पाण्याने भरलेली माती' : language === 'te' ? 'వరదలు పారిన నేల' : language === 'gu' ? 'પૂરગ્રસ્ત માટી' : 'Flooded Soil',
-          desc: language === 'hi' ? 'अत्यधिक जलभराव (95%)' : language === 'mr' ? 'अतिद्रव धोकादायक' : language === 'te' ? 'అధిక నీరు' : 'Waterlogged flood (95%)',
-          color: 'text-blue-700 bg-blue-50/50 border-blue-100',
-          indicator: 'bg-blue-500 animate-bounce'
-        };
+    if (id === 'A') {
+      return {
+        emoji: '🌱',
+        name: language === 'hi' ? 'सॉइल नोड A (ज़ोन 1)' : language === 'mr' ? 'माती नोड A (झोन १)' : language === 'te' ? 'నేల నోడ్ A (జోన్ 1)' : 'Soil Node A (Zone 1)',
+        desc: language === 'hi' ? 'सामान्य मिट्टी (42% नमी)' : language === 'mr' ? 'सामान्य माती (42% ओलावा)' : language === 'te' ? 'సాధారణ నేల (42% తేమ)' : 'Normal Soil (42% Moisture)',
+        color: 'text-emerald-700 bg-emerald-50/50 border-emerald-100',
+        indicator: 'bg-emerald-500'
+      };
+    } else if (id === 'B') {
+      return {
+        emoji: '🏜️',
+        name: language === 'hi' ? 'सॉइल नोड B (ज़ोन 2)' : language === 'mr' ? 'माती नोड B (झोन २)' : language === 'te' ? 'నేల నోడ్ B (జోన్ 2)' : 'Soil Node B (Zone 2)',
+        desc: language === 'hi' ? 'सूखी मिट्टी (12% नमी)' : language === 'mr' ? 'कोरडी माती (12% ओलावा)' : language === 'te' ? 'పొడి నేల (12% తేమ)' : 'Dry Soil (12% Moisture)',
+        color: 'text-amber-700 bg-amber-50/50 border-amber-100',
+        indicator: 'bg-amber-500 animate-pulse'
+      };
+    } else {
+      return {
+        emoji: '🌊',
+        name: language === 'hi' ? 'सॉइल नोड C (ज़ोन 3)' : language === 'mr' ? 'माती नोड C (झोन ३)' : language === 'te' ? 'నేల नोడ్ C (జోన్ 3)' : 'Soil Node C (Zone 3)',
+        desc: language === 'hi' ? 'बाढ़ मिट्टी (95% नमी)' : language === 'mr' ? 'पाण्याने भरलेली माती (95% ओलावा)' : language === 'te' ? 'వరद నేల (95% తేమ)' : 'Flooded Soil (95% Moisture)',
+        color: 'text-blue-700 bg-blue-50/50 border-blue-100',
+        indicator: 'bg-blue-500 animate-bounce'
+      };
     }
   };
-  
+
   // Raspberry Pi 4 WiFi Link states
   const [piIpAddress, setPiIpAddress] = useState(() => localStorage.getItem('pi_ip_address') || '192.168.1.50');
   const [piPort, setPiPort] = useState(() => localStorage.getItem('pi_port') || '5000');
@@ -274,9 +273,9 @@ export default function App() {
     crop: string;
     suggestions: string[];
   }>>({
-    A: { moisture: 38, temperature: 25, ph: 6.5, n: 60, p: 45, k: 55, humidity: 60, tds: 800, crop: "Vegetables / Premium Tomatoes", suggestions: ["Optimal moist condition", "Ideal root absorption under damp environment"] },
+    A: { moisture: 42, temperature: 26, ph: 6.5, n: 60, p: 45, k: 55, humidity: 62, tds: 800, crop: "Vegetables / Premium Tomatoes", suggestions: ["Normal moist condition", "Good root absorption environment"] },
     B: { moisture: 12, temperature: 31, ph: 7.2, n: 25, p: 20, k: 25, humidity: 35, tds: 300, crop: "Groundnuts & Pulses", suggestions: ["Moisture critical: Soil is too dry", "Requires localized drip irrigation"] },
-    C: { moisture: 95, temperature: 21, ph: 5.8, n: 45, p: 35, k: 30, humidity: 95, tds: 1200, crop: "Rice (Paddy) / Water Hydrant sugarcane", suggestions: ["Extreme flood warning: Waterlogged soil", "Aerate soil or irrigate drainage to avert root rot"] }
+    C: { moisture: 95, temperature: 21, ph: 5.8, n: 45, p: 35, k: 30, humidity: 95, tds: 1200, crop: "Rice (Paddy) / Sugar Cane", suggestions: ["Extreme flood warning: Waterlogged soil", "Aerate soil or irrigate drainage to avert root rot"] }
   });
 
   const sensorState = nodes[activeNode];
@@ -625,30 +624,56 @@ export default function App() {
         setNodes(prev => {
           const current = prev[activeNode];
           
-          // 1. Stabilized simulation using a slow drift / random walk from current state
+          // 1. Stabilized simulation using a slow drift / random walk bound by activeNode style
           const clamp = (val: number, min = 0, max = 100) => Math.max(min, Math.min(max, val));
           
-          const prev_ph = current.ph || 6.5;
+          let targetMinPh = 5.0, targetMaxPh = 8.5;
+          let targetMinTds = 200, targetMaxTds = 1800;
+          let targetMinMoist = 5, targetMaxMoist = 95;
+          let targetMinTemp = 15, targetMaxTemp = 38;
+          let targetMinHum = 20, targetMaxHum = 95;
+
+          if (activeNode === 'A') {
+            targetMinPh = 6.3; targetMaxPh = 6.7;
+            targetMinTds = 750; targetMaxTds = 850;
+            targetMinMoist = 38; targetMaxMoist = 45;
+            targetMinTemp = 24; targetMaxTemp = 28;
+            targetMinHum = 58; targetMaxHum = 65;
+          } else if (activeNode === 'B') {
+            targetMinPh = 7.0; targetMaxPh = 7.4;
+            targetMinTds = 250; targetMaxTds = 350;
+            targetMinMoist = 9; targetMaxMoist = 15;
+            targetMinTemp = 29; targetMaxTemp = 33;
+            targetMinHum = 30; targetMaxHum = 40;
+          } else { // Node C
+            targetMinPh = 5.5; targetMaxPh = 6.0;
+            targetMinTds = 1100; targetMaxTds = 1300;
+            targetMinMoist = 92; targetMaxMoist = 98;
+            targetMinTemp = 19; targetMaxTemp = 23;
+            targetMinHum = 90; targetMaxHum = 98;
+          }
+
+          const prev_ph = current.ph || (activeNode === 'A' ? 6.5 : activeNode === 'B' ? 7.2 : 5.8);
           let ph_value = prev_ph + (Math.random() - 0.5) * 0.08;
-          ph_value = parseFloat(Math.max(5.0, Math.min(8.5, ph_value)).toFixed(2));
+          ph_value = parseFloat(clamp(ph_value, targetMinPh, targetMaxPh).toFixed(2));
 
-          const prev_tds = current.tds || 800;
+          const prev_tds = current.tds || (activeNode === 'A' ? 800 : activeNode === 'B' ? 300 : 1200);
           let tds_ppm = prev_tds + (Math.random() - 0.5) * 40;
-          tds_ppm = Math.round(Math.max(200, Math.min(1800, tds_ppm)));
+          tds_ppm = Math.round(clamp(tds_ppm, targetMinTds, targetMaxTds));
 
-          const prev_moist = current.moisture || 42;
+          const prev_moist = current.moisture || (activeNode === 'A' ? 42 : activeNode === 'B' ? 12 : 95);
           let moisture_percent = prev_moist + (Math.random() - 0.5) * 1.5;
-          moisture_percent = parseFloat(clamp(moisture_percent, 5, 95).toFixed(1));
+          moisture_percent = parseFloat(clamp(moisture_percent, targetMinMoist, targetMaxMoist).toFixed(1));
 
-          const prev_temp = current.temperature || 26.0;
+          const prev_temp = current.temperature || (activeNode === 'A' ? 26.0 : activeNode === 'B' ? 31.0 : 21.0);
           let temperature = prev_temp + (Math.random() - 0.5) * 0.4;
-          temperature = parseFloat(Math.max(15, Math.min(38, temperature)).toFixed(1));
+          temperature = parseFloat(clamp(temperature, targetMinTemp, targetMaxTemp).toFixed(1));
 
-          const prev_hum = current.humidity || 50.0;
+          const prev_hum = current.humidity || (activeNode === 'A' ? 62.0 : activeNode === 'B' ? 35.0 : 95.0);
           let humidity = prev_hum + (Math.random() - 0.5) * 1.0;
-          humidity = parseFloat(Math.max(20, Math.min(95, humidity)).toFixed(1));
+          humidity = parseFloat(clamp(humidity, targetMinHum, targetMaxHum).toFixed(1));
 
-          // Estimate NPK % based on User formulas
+          // Estimate NPK % based on activeNode constraints
           let nitrogen = (tds_ppm / 1500) * 100;
           if (moisture_percent < 20) nitrogen *= 0.7;
           if (ph_value < 5.5 || ph_value > 8) nitrogen *= 0.8;
@@ -668,19 +693,20 @@ export default function App() {
           const k_val = Math.round(clamp(potassium));
 
           const recommendCropSim = (ph: number, m: number, t: number) => {
-            if (ph >= 5.5 && ph <= 7 && m > 45) return "Rice";
-            if (ph >= 6 && ph <= 7.5 && m < 50) return "Wheat";
-            if (ph >= 5.5 && ph <= 7 && t >= 20 && t <= 35) return "Tomato";
-            if (ph > 7) return "Cotton";
+            if (activeNode === 'A') return "Vegetables / Premium Tomatoes";
+            if (activeNode === 'B') return "Groundnuts & Pulses";
+            if (activeNode === 'C') return "Rice (Paddy) / Sugar Cane";
             return "Vegetables / Mixed Crop";
           };
 
           const suggestionsList: string[] = [];
-          if (n_val < 40) suggestionsList.push("Add nitrogen fertilizer");
-          if (p_val < 40) suggestionsList.push("Add phosphorus fertilizer");
-          if (k_val < 40) suggestionsList.push("Add potash");
-          if (ph_value < 5.5) suggestionsList.push("Soil is acidic");
-          else if (ph_value > 8) suggestionsList.push("Soil is alkaline");
+          if (activeNode === 'A') {
+            suggestionsList.push("Normal moist condition", "Good root absorption environment");
+          } else if (activeNode === 'B') {
+            suggestionsList.push("Moisture critical: Soil is too dry", "Requires localized drip irrigation");
+          } else {
+            suggestionsList.push("Extreme flood warning: Waterlogged soil", "Aerate soil or irrigate drainage to avert root rot");
+          }
 
           return {
             ...prev,
@@ -825,14 +851,29 @@ export default function App() {
   };
 
   const fetchAdvice = async () => {
-    if (!isConnected) return;
+    // Auto-connect to mock soil nodes if not already connected so the report runs successfully
+    if (!isConnected) {
+      setIsConnected(true);
+      setIsPiMocked(true);
+      setPiConnectionStatus('connected');
+      localStorage.setItem('pi_connection_status', 'connected');
+      localStorage.setItem('pi_is_mocked', 'true');
+    }
     setLoadingAdvice(true);
-    const result = await getCropAdvice(sensorState, "Wheat");
+    
+    // Crop suggestions helper
+    const currentActiveCrop = activeNode === 'A' 
+      ? 'Vegetables / Premium Tomatoes' 
+      : activeNode === 'B' 
+      ? 'Groundnuts & Pulses' 
+      : 'Rice (Paddy) / Sugarcane';
+      
+    const result = await getCropAdvice(sensorState, currentActiveCrop);
     
     // Save to Firestore with NODE ID
     try {
       await addDoc(collection(db, 'sensorData'), {
-        userId: user!.uid,
+        userId: user?.uid || 'offline_farmer_123',
         nodeId: activeNode,
         moisture: sensorState.moisture,
         temperature: sensorState.temperature,
@@ -1535,14 +1576,8 @@ function MenuButton({ icon: Icon, label }: any) {
                                 {t.soilMoisture}
                               </span>
                             </div>
-                            <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-wider ${
-                              nodes[id].moisture < 20 
-                              ? 'bg-rose-50 text-rose-600 border border-rose-100' 
-                              : nodes[id].moisture > 80 
-                              ? 'bg-blue-50 text-blue-600 border border-blue-100' 
-                              : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
-                            }`}>
-                              {nodes[id].moisture < 20 ? 'Critical Dry' : nodes[id].moisture > 80 ? 'Flooded' : 'Moist/Wet'}
+                            <span className="text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100">
+                              Active
                             </span>
                           </div>
                         </button>
@@ -1738,7 +1773,7 @@ function MenuButton({ icon: Icon, label }: any) {
                       </div>
                       <button 
                         onClick={fetchAdvice}
-                        disabled={!isConnected || loadingAdvice}
+                        disabled={loadingAdvice}
                         className="bg-emerald-600 text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg shadow-emerald-200 disabled:opacity-50"
                       >
                         {loadingAdvice ? 'Checking...' : 'Check Match'}
@@ -2299,11 +2334,42 @@ function MenuButton({ icon: Icon, label }: any) {
                     </button>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center justify-center h-[300px] text-center space-y-4">
-                    <div className="bg-slate-50 p-6 rounded-full">
-                      <MessageSquare className="w-12 h-12 text-slate-200" />
+                  <div className="flex flex-col items-center justify-center min-h-[300px] text-center p-6 space-y-4 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200/60 my-4">
+                    <div className="bg-indigo-50 p-4 rounded-full text-indigo-600">
+                      <Sprout className="w-10 h-10 animate-bounce" />
                     </div>
-                    <p className="text-slate-500 text-sm max-w-[200px] font-semibold">{language === 'hi' ? 'कोई सक्रिय विश्लेषण नहीं। जब आपका सेंसर कनेक्टेड हो, मुख्य पृष्ठ पर "एआई सलाह देखें" बटन दबाएं।' : language === 'mr' ? 'कोणतेही सक्रिय विश्लेषण उपलब्ध नाही. सेन्सर कनेक्ट झाल्यावर मुख्य स्क्रीनवरून विश्लेषण मिळवा.' : language === 'te' ? 'విశ్లేషణ ఏదీ లేదు. హోమ్ పేజీలో నేల సలహా పొందండి.' : 'No active analysis. Please check back when your Node is active.'}</p>
+                    <div className="space-y-1.5 max-w-[320px]">
+                      <h4 className="font-bold text-slate-800 text-sm">
+                        {language === 'hi' ? 'कोई सक्रिय विश्लेषण नहीं' : language === 'mr' ? 'अद्याप कोणतेही विश्लेषण नाही' : 'No Active Soil Analysis'}
+                      </h4>
+                      <p className="text-slate-500 text-xs leading-relaxed">
+                        {language === 'hi' 
+                          ? 'जेमिनी एआई द्वारा संचालित मिट्टी रिपोर्ट उत्पन्न करें और अपनी कृषि पैदावार को बढ़ाएं।' 
+                          : language === 'mr'
+                          ? 'तुमच्या जमिनीसाठी जेमिनी एआय माती अहवाल मिळवा आणि शेती सुधारा.'
+                          : 'Generate an instant Gemini AI powered soil report for your current node to maximize agricultural yields.'}
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchAdvice}
+                      disabled={loadingAdvice}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[220px] py-3.5 px-6 rounded-2xl text-xs font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-wide"
+                    >
+                      {loadingAdvice ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          <span>{language === 'hi' ? 'विश्लेषण किया जा रहा है...' : 'Running Report...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="w-4.5 h-4.5" />
+                          <span>{language === 'hi' ? 'एआई रिपोर्ट प्राप्त करें' : 'Generate AI Report'}</span>
+                        </>
+                      )}
+                    </button>
+                    <p className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                      {language === 'hi' ? `वितरण लक्ष्य: सॉइल नोड ${activeNode}` : `Active Target: Soil Node ${activeNode}`}
+                    </p>
                   </div>
                 )}
               </div>
