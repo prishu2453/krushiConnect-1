@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile for farmers and buyers",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["farmer", "buyer", "admin"] },
+        "location": { "type": "string" },
+        "language": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Crop listings for sale",
+      "type": "object",
+      "properties": {
+        "farmerId": { "type": "string" },
+        "farmerName": { "type": "string" },
+        "cropName": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "quantity": { "type": "string" },
+        "location": { "type": "string" },
+        "imageUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "sold"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["farmerId", "cropName", "price", "quantity"]
+    },
+    "SensorData": {
+      "title": "SensorData",
+      "description": "IoT sensor readings with AI advice and location",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "moisture": { "type": "number" },
+        "temperature": { "type": "number" },
+        "ph": { "type": "number" },
+        "n": { "type": "number" },
+        "p": { "type": "number" },
+        "k": { "type": "number" },
+        "advice": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lon": { "type": "number" },
+            "city": { "type": "string" }
+          }
+        },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "timestamp"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "Communication between farmers and buyers",
+      "type": "object",
+      "properties": {
+        "participants": { "type": "array" },
+        "lastMessage": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual chat message",
+      "type": "object",
+      "properties": {
+        "senderId": { "type": "string" },
+        "text": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Booking": {
+      "title": "Booking",
+      "description": "Transport or cold storage booking",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "type": { "type": "string", "enum": ["transport", "storage"] },
+        "details": { "type": "string" },
+        "price": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "confirmed", "completed"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "type", "details", "price", "status"]
+    },
+    "Listing": {
+      "title": "Listing",
+      "description": "Direct marketplace crop listing",
+      "type": "object",
+      "properties": {
+        "crop": { "type": "string" },
+        "quantity": { "type": "string" },
+        "price": { "type": "string" },
+        "location": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userPhoto": { "type": "string" },
+        "status": { "type": "string", "enum": ["available", "sold"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["crop", "quantity", "price", "location", "userId", "userName", "status"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/products/{productId}": {
+      "schema": "Product",
+      "description": "Marketplace crop listings"
+    },
+    "/bookings/{bookingId}": {
+      "schema": "Booking",
+      "description": "Transport and storage bookings"
+    },
+    "/listings/{listingId}": {
+      "schema": "Listing",
+      "description": "Direct crop marketplace listings"
+    },
+    "/sensorData/{dataId}": {
+      "schema": "SensorData",
+      "description": "IoT sensor readings log"
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Chat sessions"
+    },
+    "/chats/{chatId}/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Messages within a chat"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "name": "Krushi Connect",
+  "description": "An AI-powered smart agriculture platform for Indian farmers featuring a marketplace, live Mandi prices, government schemes, and IoT sensor integration for personal crop suggestions.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

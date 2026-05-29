@@ -1,0 +1,126 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'location', 'language', 'role'])
+      );
+
+      function isValidUser(data) {
+        return data.keys().hasAll(['uid', 'name', 'role']) &&
+               data.uid == request.auth.uid &&
+               data.role in ['farmer', 'buyer', 'admin'] &&
+               data.name is string && data.name.size() > 0;
+      }
+    }
+
+    // Products
+    match /products/{productId} {
+      allow read: if true; // Marketplace is public
+      allow create: if isSignedIn() && isValidProduct(incoming()) && incoming().farmerId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        (isOwner(existing().farmerId) && isValidProduct(incoming()) && incoming().farmerId == existing().farmerId) ||
+        (incoming().diff(existing()).affectedKeys().hasOnly(['status'])) // Buyer might update status on purchase if we implement simple purchase
+      );
+      allow delete: if isSignedIn() && isOwner(existing().farmerId);
+
+      function isValidProduct(data) {
+        return data.keys().hasAll(['farmerId', 'cropName', 'price', 'quantity']) &&
+               data.cropName is string && data.cropName.size() > 0 &&
+               data.price is number && data.price >= 0;
+      }
+    }
+
+    // Sensor Data
+    match /sensorData/{dataId} {
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid;
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    // Bookings (Transport & Storage)
+    match /bookings/{bookingId} {
+      allow read: if isSignedIn() && (
+        resource.data.userId == request.auth.uid || 
+        resource.data.type in ['transport', 'storage']
+      );
+      allow create: if isSignedIn() && 
+                    incoming().userId == request.auth.uid && 
+                    incoming().status == 'pending' && 
+                    isValidBooking(incoming());
+      allow update: if isSignedIn() && (
+                      existing().userId == request.auth.uid || 
+                      resource.data.type in ['transport', 'storage']
+                    ) && 
+                    incoming().userId == existing().userId &&
+                    incoming().diff(existing()).affectedKeys().hasOnly(['status']);
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+
+      function isValidBooking(data) {
+        return data.keys().hasAll(['userId', 'type', 'details', 'price', 'status']) &&
+               data.userId is string && data.userId.size() > 0 &&
+               data.type in ['transport', 'storage'] &&
+               data.status in ['pending', 'confirmed', 'completed'];
+      }
+    }
+
+    // Direct Listings
+    match /listings/{listingId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && incoming().userId == request.auth.uid && isValidListing(incoming());
+      allow update: if isSignedIn() && 
+                    existing().userId == request.auth.uid && 
+                    incoming().userId == existing().userId &&
+                    isValidListing(incoming());
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+
+      function isValidListing(data) {
+        return data.keys().hasAll(['crop', 'quantity', 'price', 'location', 'userId', 'userName', 'status']) &&
+               data.crop is string && data.crop.size() > 0 &&
+               data.status in ['available', 'sold'];
+      }
+    }
+
+    // Chats and Messages
+    match /chats/{chatId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.participants;
+      allow create: if isSignedIn() && request.auth.uid in incoming().participants;
+      allow update: if isSignedIn() && request.auth.uid in existing().participants;
+
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+        allow create: if isSignedIn() && incoming().senderId == request.auth.uid &&
+                      request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.participants;
+      }
+    }
+  }
+}
