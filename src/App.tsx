@@ -204,6 +204,35 @@ export default function App() {
   const [showLangMenu, setShowLangMenu] = useState(false);
   const t = translations[language];
   const [isConnected, setIsConnected] = useState(false);
+
+  const getSoilDetails = (id: 'A' | 'B' | 'C') => {
+    switch (id) {
+      case 'A':
+        return {
+          emoji: '🌿',
+          name: language === 'hi' ? 'गीली मिट्टी (कम गीली)' : language === 'mr' ? 'कमी ओली माती' : language === 'te' ? 'కొద్దిగా తడి నేల' : language === 'gu' ? 'ઓછી લીલી માટી' : 'Little Wet Soil',
+          desc: language === 'hi' ? 'अनुकूल आर्द्र परिवेश (38%)' : language === 'mr' ? 'चांगले तापमान व ओलावा' : language === 'te' ? 'సరైన తేమ' : 'Moist & aerated (38%)',
+          color: 'text-emerald-700 bg-emerald-50/50 border-emerald-100',
+          indicator: 'bg-emerald-500'
+        };
+      case 'B':
+        return {
+          emoji: '🏜️',
+          name: language === 'hi' ? 'सूखी मिट्टी' : language === 'mr' ? 'सुकी माती' : language === 'te' ? 'పొడి నేల' : language === 'gu' ? 'સૂકી માટી' : 'Dry Soil',
+          desc: language === 'hi' ? 'निर्जलित शुष्क अवस्था (12%)' : language === 'mr' ? 'कमी ओलावा' : language === 'te' ? 'ఎండిపోయిన నేల' : 'Dry, needs water (12%)',
+          color: 'text-amber-700 bg-amber-50/50 border-amber-100',
+          indicator: 'bg-amber-500 animate-pulse'
+        };
+      case 'C':
+        return {
+          emoji: '🌊',
+          name: language === 'hi' ? 'जलमग्न / बाढ़ मिट्टी' : language === 'mr' ? 'पाण्याने भरलेली माती' : language === 'te' ? 'వరదలు పారిన నేల' : language === 'gu' ? 'પૂરગ્રસ્ત માટી' : 'Flooded Soil',
+          desc: language === 'hi' ? 'अत्यधिक जलभराव (95%)' : language === 'mr' ? 'अतिद्रव धोकादायक' : language === 'te' ? 'అధిక నీరు' : 'Waterlogged flood (95%)',
+          color: 'text-blue-700 bg-blue-50/50 border-blue-100',
+          indicator: 'bg-blue-500 animate-bounce'
+        };
+    }
+  };
   
   // Raspberry Pi 4 WiFi Link states
   const [piIpAddress, setPiIpAddress] = useState(() => localStorage.getItem('pi_ip_address') || '192.168.1.50');
@@ -245,9 +274,9 @@ export default function App() {
     crop: string;
     suggestions: string[];
   }>>({
-    A: { moisture: 42, temperature: 28, ph: 6.5, n: 60, p: 45, k: 50, humidity: 55, tds: 900, crop: "Tomato", suggestions: [] },
-    B: { moisture: 55, temperature: 26, ph: 6.8, n: 80, p: 30, k: 45, humidity: 48, tds: 1200, crop: "Wheat", suggestions: [] },
-    C: { moisture: 12, temperature: 31, ph: 5.8, n: 20, p: 10, k: 15, humidity: 35, tds: 300, crop: "Vegetables / Mixed Crop", suggestions: ["Add nitrogen fertilizer", "Add phosphorus fertilizer"] }
+    A: { moisture: 38, temperature: 25, ph: 6.5, n: 60, p: 45, k: 55, humidity: 60, tds: 800, crop: "Vegetables / Premium Tomatoes", suggestions: ["Optimal moist condition", "Ideal root absorption under damp environment"] },
+    B: { moisture: 12, temperature: 31, ph: 7.2, n: 25, p: 20, k: 25, humidity: 35, tds: 300, crop: "Groundnuts & Pulses", suggestions: ["Moisture critical: Soil is too dry", "Requires localized drip irrigation"] },
+    C: { moisture: 95, temperature: 21, ph: 5.8, n: 45, p: 35, k: 30, humidity: 95, tds: 1200, crop: "Rice (Paddy) / Water Hydrant sugarcane", suggestions: ["Extreme flood warning: Waterlogged soil", "Aerate soil or irrigate drainage to avert root rot"] }
   });
 
   const sensorState = nodes[activeNode];
@@ -1423,20 +1452,33 @@ function MenuButton({ icon: Icon, label }: any) {
                 </div>
                 
                 {role === 'farmer' && (
-                  <div className="flex bg-white p-1 rounded-2xl border border-slate-200">
-                    {(['A', 'B', 'C'] as const).map(id => (
-                      <button
-                        key={id}
-                        onClick={() => setActiveNode(id)}
-                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${
-                          activeNode === id 
-                          ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30' 
-                          : 'text-slate-400 hover:text-slate-600'
-                        }`}
-                      >
-                        {t.node.toUpperCase()} {id}
-                      </button>
-                    ))}
+                  <div className="flex bg-white p-1 rounded-2xl border border-slate-200 max-w-full overflow-x-auto whitespace-nowrap scrollbar-none gap-0.5">
+                    {(['A', 'B', 'C'] as const).map(id => {
+                      const details = getSoilDetails(id);
+                      return (
+                        <button
+                          key={id}
+                          onClick={() => {
+                            setActiveNode(id);
+                            if (!isConnected) {
+                              setIsConnected(true);
+                              setIsPiMocked(true);
+                              setPiConnectionStatus('connected');
+                              localStorage.setItem('pi_connection_status', 'connected');
+                              localStorage.setItem('pi_is_mocked', 'true');
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded-xl text-[10px] font-black transition-all flex items-center gap-1.5 shrink-0 ${
+                            activeNode === id 
+                            ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30 font-black' 
+                            : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'
+                          }`}
+                        >
+                          <span>{details.emoji}</span>
+                          <span className="tracking-wide">{details.name.split(' (')[0]}</span>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -1444,17 +1486,68 @@ function MenuButton({ icon: Icon, label }: any) {
               {/* Role-Specific Home Content */}
               {role === 'farmer' && (
                 <>
-                  <div className="grid grid-cols-3 gap-2 px-1">
-                    {(['A', 'B', 'C'] as const).map(id => (
-                      <div key={id} className={`p-3 rounded-2xl border transition-all ${activeNode === id ? 'bg-emerald-50 border-emerald-200 ring-2 ring-emerald-500/20' : 'bg-white border-slate-100'}`}>
-                        <div className="flex justify-between items-center mb-1">
-                           <span className={`text-[8px] font-black uppercase ${activeNode === id ? 'text-emerald-600' : 'text-slate-400'}`}>{t.node} {id}</span>
-                           <div className={`w-1 h-1 rounded-full ${nodes[id].moisture < 20 ? 'bg-rose-500 animate-pulse' : 'bg-emerald-500'}`} />
-                        </div>
-                        <div className="text-sm font-black text-slate-900">{Math.round(nodes[id].moisture)}%</div>
-                        <div className="text-[8px] text-slate-400 font-bold uppercase">{t.soilMoisture}</div>
-                      </div>
-                    ))}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 px-1">
+                    {(['A', 'B', 'C'] as const).map(id => {
+                      const details = getSoilDetails(id);
+                      return (
+                        <button
+                          key={id}
+                          type="button"
+                          onClick={() => {
+                            setActiveNode(id);
+                            if (!isConnected) {
+                              setIsConnected(true);
+                              setIsPiMocked(true);
+                              setPiConnectionStatus('connected');
+                              localStorage.setItem('pi_connection_status', 'connected');
+                              localStorage.setItem('pi_is_mocked', 'true');
+                            }
+                          }}
+                          className={`p-4 rounded-[2rem] border text-left transition-all relative overflow-hidden flex flex-col justify-between group ${
+                            activeNode === id 
+                            ? 'bg-emerald-50/60 border-emerald-500/20 ring-2 ring-emerald-500/10 shadow-md shadow-emerald-600/5' 
+                            : 'bg-white border-slate-200/50 hover:bg-slate-50/50 hover:border-slate-300'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start w-full gap-2 mb-2">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="text-2xl shrink-0">{details.emoji}</span>
+                              <div className="flex flex-col min-w-0">
+                                <span className={`text-[8px] font-black uppercase tracking-widest ${activeNode === id ? 'text-emerald-700' : 'text-slate-400'}`}>
+                                  {t.node} {id}
+                                </span>
+                                <span className="font-heading font-black text-xs text-slate-800 tracking-tight mt-0.5 truncate leading-tight">
+                                  {details.name}
+                                </span>
+                              </div>
+                            </div>
+                            <div className={`w-2 h-2 rounded-full shrink-0 ${details.indicator}`} />
+                          </div>
+
+                          <div className="text-[10px] text-slate-400 font-medium leading-normal mb-3">
+                            {details.desc}
+                          </div>
+
+                          <div className="flex items-baseline justify-between w-full mt-auto">
+                            <div>
+                              <span className="text-3xl font-black text-slate-900 leading-none">{Math.round(nodes[id].moisture)}%</span>
+                              <span className="text-[9px] text-slate-400 font-bold uppercase block tracking-wider mt-1">
+                                {t.soilMoisture}
+                              </span>
+                            </div>
+                            <span className={`text-[8px] font-black px-2 py-1 rounded-lg uppercase tracking-wider ${
+                              nodes[id].moisture < 20 
+                              ? 'bg-rose-50 text-rose-600 border border-rose-100' 
+                              : nodes[id].moisture > 80 
+                              ? 'bg-blue-50 text-blue-600 border border-blue-100' 
+                              : 'bg-emerald-50 text-emerald-600 border border-emerald-100'
+                            }`}>
+                              {nodes[id].moisture < 20 ? 'Critical Dry' : nodes[id].moisture > 80 ? 'Flooded' : 'Moist/Wet'}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {/* Manual Calibration / Simulation Panel */}
